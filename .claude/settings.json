@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Read(.claude/skills/fmea-analysis/references/**)",
+      "mcp__fmea-mcp__*",
+      "Bash(test:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \".claude/skills/fmea-analysis/mcp-server/hooks/hook_pre_write.py\"",
+            "timeout": 30,
+            "statusMessage": "FMEA Pre-Write Validation"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \".claude/skills/fmea-analysis/mcp-server/hooks/hook_post_write.py\"",
+            "timeout": 30,
+            "statusMessage": "FMEA Post-Write Validation"
+          }
+        ]
+      }
+    ]
+  }
+}

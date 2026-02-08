@@ -1,0 +1,13 @@
+# FMEA MCP Server Dependencies
+# Version: 1.0
+# Date: 2026-02-04
+
+# FastMCP (v2.x 안정 버전 - v3.0 베타 사용 금지!)
+fastmcp>=2.14,<3
+
+# Pydantic (타입 검증)
+pydantic>=2.0
+
+# 기존 scripts 의존성 (이미 설치되어 있을 수 있음)
+pandas>=2.0
+openpyxl>=3.1

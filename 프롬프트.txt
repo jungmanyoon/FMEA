@@ -1,0 +1,744 @@
+# FMEA 작성 프롬프트 (v2.7 - 다이어그램 전기능 필수 + 추가기능 확장 + F-G 연동 + SOD 형식)
+
+"단자" 카테고리의 "지지철" 도면의 모든 부품에 대해 FMEA를 한개의 엑셀 파일로 작성해줘
+폴더가 있다면 뒤에 숫자를 추가해서 새로운 폴더로 만들어줘.
+시작 시간 몇시 몇분 몇초를 정확히 알려주고, 종료시간도 동일하게 알려줘 그래서 경과시간을 알려주면 좋겠어.
+
+## [CRITICAL] 필수 지시사항
+
+> **[BLOCKING]** 아래 지시를 반드시 따라야 함. 건너뛰기 금지!
+
+1. **/fmea-analysis 스킬 활성화** - 스킬 지시를 100% 따를 것
+2. **각 GATE 자동 검증** - 통과 시 자동 진행, 미통과 시에만 중단 후 자동 재시도
+3. **내부문서 실제 Read** - 인덱스 파일만 읽고 끝내지 말 것!
+   - 인덱스: `02.참고자료/_fmea_index/mandatory_docs_by_component.json`
+   - 인덱스에서 경로 추출 -> Glob -> **실제 파일 Read!**
+4. **Write 도구로 JSON 생성** - openpyxl 직접 사용 금지!
+5. **[NEW] MCP 도구로 검증** - 모든 컬럼 MCP 검증 필수!
+6. **[NEW] ToolSearch 필수** - MCP 도구는 deferred tools! 사용 전 반드시 로드!
+   - `ToolSearch("fmea")` -> 16개 도구 로드 후 사용
+   - [X] 금지: ToolSearch 없이 MCP 도구 호출 시도 (실패함!)
+7. **[NEW] 스킬 절대경로 필수** - 상대경로 사용 금지!
+   - EXCEL_SCRIPT: `C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py`
+   - REFERENCES: `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\`
+   - [X] 금지: Glob으로 스크립트 검색 후 커스텀 대체물 작성!
+8. **[NEW] 완료 전 BLOCKING 체크** - 거짓 완료 방지!
+   - 전체 부품 수 == 처리된 부품 수 확인 후에만 PASS 보고
+   - batch JSON 파일 존재 확인 (없으면 Phase 2 미완료!)
+   - Excel이 스킬 스크립트(EXCEL_SCRIPT)로 생성됐는지 확인
+
+---
+
+## [MCP] MCP 도구 활용 (v2.5 - 16개 도구, 4-Round 병렬 사전검증)
+
+> **[!!] Phase 2에서 각 컬럼 작성 시 MCP 검증 필수!**
+> **[!!] MCP 도구는 deferred tools! ToolSearch("fmea") 호출로 먼저 로드!**
+> **[X] 금지: ToolSearch 없이 MCP 도구 호출 (실패함!)**
+
+### MCP 도구 목록 (v2.5 - 16개 도구)
+| MCP 도구 | 용도 | 시점 |
+|---------|------|------|
+| `fmea_validate_failure_mode` | E열 금지어/태그 + **3줄 구조** + **추상적표현/힘/물성/기능 금지(v2.5)** | 항목 작성 전 |
+| `fmea_validate_effect` | C열 물리상태 금지어 + **검사결과 금지(v2.4)** + **상세설명 2줄(v2.2)** | 항목 작성 전 |
+| `fmea_validate_cause` | F열 라이프사이클 태그 + **상세설명 2줄(v2.2)** | 항목 작성 전 |
+| `fmea_validate_mechanism` | G열 화살표 형식 + **원인키워드 금지(v2.4)** | 항목 작성 전 |
+| `fmea_validate_prevention` | H열 줄 수 검증 **(+cause 연계)** | 항목 작성 전 |
+| `fmea_validate_detection` | J열 줄 수 검증 **(+failure_mode 연계)** | 항목 작성 전 |
+| `fmea_validate_causal_chain` | E-F 인과관계 검증 | 항목 작성 전 |
+| `fmea_validate_cause_mechanism` | **[NEW] F-G열 원인-메커니즘 일관성** | 항목 작성 전 |
+| `fmea_validate_function_effect` | **[NEW] B-C열 기능-영향 일관성** | 항목 작성 전 |
+| `fmea_validate_row_context` | **[NEW] 행 전체 컨텍스트 검증** | 항목 작성 전 |
+| `fmea_validate_batch` | 배치 JSON 전체 검증 **(+row_context)** | Excel 생성 전 |
+| `fmea_create_item` | 항목 생성 (출처 검증 포함, **+function**) | **v13: Generator 미사용** (Round 1-3 검증으로 대체) |
+| `fmea_register_read` | 파일 Read 등록 (환각방지) | Read 직후 |
+| `fmea_check_read_status` | 필수 파일 Read 확인 | 항목 작성 전 |
+| `fmea_get_forbidden_words` | E열 금지어 목록 조회 | 참고용 |
+| `fmea_get_invalid_causal_combinations` | E-F 금지 조합 조회 | 참고용 |
+
+### [!!] Read 후 즉시 등록 (환각 방지!)
+```
+1. Read(내부문서)
+2. fmea_register_read(파일경로, 해시값)  <- 필수!
+```
+- [X] 금지: Read만 하고 등록 안함
+- [O] 필수: Read 직후 fmea_register_read() 호출!
+
+### [!!] 항목 작성 시 MCP 4-Round 병렬 사전검증 (v13 성능최적화)
+```
+[Round 1] 독립 검증 4개 병렬 호출 (1 LLM turn!)
+  fmea_validate_failure_mode(E)    -- E열 (3줄 구조 + 금지어 + 태그)
+  fmea_validate_cause(F)           -- F열 (라이프사이클 태그)
+  fmea_validate_mechanism(G)       -- G열 (화살표 형식)
+  fmea_validate_effect(C)          -- C열 (물리상태 금지어)
+  -> 실패 항목만 수정 후 해당 검증 재호출
+
+[Round 2] 교차 검증 5개 병렬 호출 (1 LLM turn!)
+  fmea_validate_causal_chain(E, F)        -- E-F 인과관계
+  fmea_validate_cause_mechanism(F, G)     -- F-G 도메인일치
+  fmea_validate_function_effect(B, C)     -- B-C 기능-영향
+  fmea_validate_prevention(H, cause=F)    -- H열 (줄수 + 원인 연계)
+  fmea_validate_detection(J, mode=E)      -- J열 (줄수 + 형태 연계)
+  -> 실패 항목만 수정 후 해당 검증 재호출
+
+[Round 3] 행 전체 맥락 검증 (1 LLM turn)
+  fmea_validate_row_context(B, C, E, F, G, H, J)
+
+[Round 4] 산출 + 저장 (MCP 불요)
+  S/O/D값 + RPN + AP 산출 -> items 배열에 추가
+──────────────────────────────────────────────────
+배치 완료 -> fmea_validate_batch(+row_context)    (배치 전체 검증)
+```
+> [!!] fmea_create_item()은 Generator에서 미사용 (Round 1-3 전수 검증으로 대체, v13)
+> [!!] Round 1/2의 병렬 호출 = 같은 메시지에서 동시 호출! 순차 = 성능 저하!
+
+### [BLOCKING] MCP 검증 실패 시
+- 실패 -> 즉시 수정 -> 재검증
+- 통과 없이 다음 항목 진행 금지!
+
+---
+
+## [!!] 시점 기반 컬럼 검증 (가장 중요!)
+
+> **핵심 원리**: FMEA 오류의 80%는 시점 혼동에서 발생!
+
+```
+과거(원인)  →  현재(형태)  →  미래(영향)
+   F열            E열           C열
+```
+
+| 컬럼 | 시점 | 검증 질문 | YES | NO |
+|------|------|----------|-----|-----|
+| **C열** (고장영향) | 미래 | "앞으로 **고객**에게 영향?" | C열 OK | E열/G열로! |
+| **E열** (고장형태) | 현재 | "지금 **눈에 보이나**?" | E열 OK | C열/F열로! |
+| **F열** (고장원인) | 과거 | "**과거에 잘못**된 것?" | F열 OK | E열로! |
+
+### [!!] E열 태그 선택 기준 = 기능 결과물 (가이드 V1.3)
+
+> **핵심**: 기능 자체가 아닌 "기능이 만들어내는 결과물"이 부족/과도/유해한지 판단!
+
+| 태그 | 핵심 질문 | 예시 |
+|------|----------|------|
+| **부족:** | "기능 결과물이 덜 되면?" | (부족: 전달된 자속이 부족하면 층간단락 발생) |
+| **과도:** | "기능 결과물이 과하면?" | (과도: 방출된 열이 과하면 과열흔적 발생) |
+| **유해:** | "기능 결과물 정상인데 딴 데서?" | (유해: 전달된 자속 정상 수행 시 와전류흔적 발생) |
+
+**기능 → 기능 결과물 변환**:
+- "자속을 전달한다" → "전달된 자속"
+- "전류 경로를 제공한다" → "제공된 전류 경로"
+- "열을 방출한다" → "방출된 열"
+
+### [!!] E열 3줄 구조 (옵션 A) - MCP v2.1 강제!
+
+> **[BLOCKING]** E열은 반드시 3줄로 작성! 1줄만 쓰면 MCP MISSING_DETAIL 오류!
+
+```
+줄 1: 태그: 현상                    (예: "부족: 볼트 이완")
+줄 2: (상세 설명)                   (예: "(TIEPLATE 체결 볼트가 풀리는 현상)")
+줄 3: (판단 근거: 태그+기능결과물)  (예: "(부족: 구조적 연결이 부족하면 볼트 이완 발생)")
+```
+
+**MCP 검증 항목** (fmea_validate_failure_mode):
+- MISSING_DETAIL: 줄 2가 `(`로 시작, `)`로 끝나야 함
+- MISSING_JUDGMENT: 줄 3이 `(`로 시작, `)`로 끝나야 함
+- TAG_MISMATCH_JUDGMENT: 줄 3의 태그가 줄 1과 일치해야 함
+- 금지어 검증: 줄 1만 대상 (줄 2~3은 검증 제외)
+
+**예시**:
+```
+부족: 볼트 이완
+(TIEPLATE 체결 볼트가 풀리는 현상)
+(부족: 구조적 연결이 부족하면 볼트 이완 발생)
+```
+
+- [X] 금지: `부족: 볼트 이완` (1줄만) -> MISSING_DETAIL 오류!
+- [X] 금지: 줄 3 태그가 줄 1과 불일치 -> TAG_MISMATCH_JUDGMENT 오류!
+- [O] 필수: 3줄 완전한 형식으로 작성!
+
+### [!!] C열 2줄 형식 (MCP v2.2 강제!)
+
+> **[BLOCKING]** C열(고장영향)은 반드시 2줄로 작성! 1줄만 쓰면 MISSING_DETAIL 오류!
+
+```
+줄 1: 영향                (예: "절연파괴")
+줄 2: (상세설명)           (예: "(유전체 강도 초과로 인한 절연 내력 상실)")
+```
+- [!!] 같은 고장영향 = 동일 상세설명! Leader가 L-1.6에서 확정한 문자열 그대로 사용! (v14)
+  -> [X] 금지: 고장형태별로 상세설명 변경! (엑셀 C열 셀 병합 불가!)
+- [X] 금지: `절연파괴` (1줄만) -> MISSING_DETAIL 오류!
+- [X] 금지: C열에 물리적 상태 (크랙, 변형, 단락, 균열, 누설, 마모 등 -> E열!)
+
+### [!!] F열 2줄 형식 (MCP v2.2 강제!)
+
+> **[BLOCKING]** F열(고장원인)은 반드시 2줄로 작성! 1줄만 쓰면 MISSING_DETAIL 오류!
+
+```
+줄 1: 단계: 원인            (예: "설계: 수축율 미반영")
+줄 2: (상세설명)            (예: "(프레스보드 수축율 3-5% 미고려)")
+```
+- [X] 금지: `설계: 수축율 미반영` (1줄만) -> MISSING_DETAIL 오류!
+- [O] 필수: 단계는 설계/재료/제작/시험 중 하나!
+
+### [X] 절대 금지 오분류!
+- 소음/진동 -> E열 [X] -> **C열로!** (미래 영향)
+- 용접불량/적층불량 -> C열 [X] -> **E열로!** (현재 형태)
+- 설계오류/재료불량 -> E열 [X] -> **F열로!** (과거 원인)
+- 크랙/변형/부식 -> F열 [X] -> **E열로!** (현재 상태)
+
+### [X] E열 추가 금지어 (MCP v2.5!)
+- **추상적 표현**: 불량, 이상, 미흡 -> 구체적 현상으로! (크랙, 이완, 변색, 탈락)
+  - 예외: 접촉불량, 용접불량, 적층불량 등 복합어는 허용 (visible phenomena)
+- **힘/강도 (측정장비 필요!)**: 체결력, 고정력, 압착력, 클램핑력, 접촉력, 밀착력, 조임력, 결합력
+  -> 대체: 체결력->풀림/이완, 고정력->변위/탈락, 압착력->이격/분리, 접촉력->접촉불량
+- **물성 (측정장비 필요!)**: 기밀성, 절연성, 내구성, 접착성, 유연성, 강성, 경도
+  -> 대체: 기밀성->누설/기포, 절연성->탄화/아크흔적, 내구성->균열/마모, 접착성->박리
+- **기능/성능 (C열 내용!)**: 기능, 성능, 효율, 용량, 능력 -> E열은 물리적 현상만!
+
+---
+
+## [SUBAGENT] Subagent 병렬 워크플로우 (Leader + Workers)
+
+> **[BLOCKING]** Subagent 패턴으로 실행!
+> Leader(메인 세션)가 전체 조율, Workers(Subagent)가 병렬 실행!
+> 에이전트 파일: `C:\Users\jmyoo\Desktop\FMEA\.claude\agents\` (4개: leader + collector + generator + fixer)
+
+### 에이전트 구성
+| 에이전트 | 역할 | 모델 | Phase |
+|---------|------|------|-------|
+| `fmea-leader` | **playbook** (메인 세션이 Read하고 지시 따름) | sonnet | 전체 |
+| `fmea-worker-collector` | 데이터 수집 (A+D/B/C 3가지 역할) | haiku | Phase 1 |
+| `fmea-worker-generator` | FMEA 항목 생성 + 4-Round 병렬 사전검증 | sonnet | Phase 2 |
+| `fmea-worker-fixer` | ALL-AT-ONCE 일괄수정 + 다이아몬드/라이프사이클/용어 보완 | haiku | Phase 3 |
+
+> [!!] Agent Teams API 사용 안 함! (TeamCreate/SendMessage/TeamDelete 금지!)
+> [!!] Task(subagent_type=..., mode="dontAsk") 패턴 사용!
+
+### Phase 1: 데이터 수집 (3 Workers + Leader WebSearch 동시!)
+```
+Leader가 3개 Worker를 Task(subagent_type=..., mode="dontAsk")로 동시 실행 + WebSearch 직접 수행:
+
+Worker A+D (다이어그램+온톨로지 병합):
+  Part 1: 변압기_FMEA_Step2_Step3_다이어그램_v2.9_xlsx.json Read
+    -> E열(부품명) 검색 -> D열(도면명), F열(기능) 추출
+    -> 주기능/보조기능 구분
+  Part 2: 6개 온톨로지 Read -> rules_summary.json 저장
+    -> 절대경로: C:\Users\jmyoo\.claude\skills\fmea-analysis\references\
+    -> [X] 금지: 프로젝트 폴더(02.참고자료/)에서 온톨로지 검색!
+
+Worker B (내부문서-설계+재료): mandatory_docs_by_component.json에서 경로 추출
+  -> 설계(CHECK SHEET, WORKFLOW, TD시리즈)/재료(R시리즈) 실제 Read!
+  -> 각 Read 후 fmea_register_read() 호출 (환각 방지!)
+  -> 기준값+출처 extracted_data에 수집
+
+Worker C (내부문서-제작+시험): mandatory_docs_by_component.json에서 경로 추출
+  -> 제작(W시리즈, I시리즈, C시리즈)/시험(P시리즈) 실제 Read!
+  -> 기준값+출처 extracted_data에 수집
+
+Leader (WebSearch 직접 수행): 5회 검색 (IEC/IEEE/CIGRE/case study/root cause)
+  -> C/E/F/G열 후보 추출 + 시점 검증 적용
+  -> [!!] WebSearch는 서브에이전트에서 시스템 레벨 제한! Leader만 직접 수행!
+```
+- [O] 필수: 3 Workers + Leader WebSearch 동시 실행 (순차 아님!)
+- [O] 필수: Worker B+C - 9종류 내부문서 모두 Read
+- [O] 필수: Worker A+D - rules_summary.json 저장 확인
+
+### Phase 1 완료 -> GATE 0 검증
+```
+Leader:
+1. 3개 Worker 결과 수신 (Subagent 반환값 + _work/ 파일)
+2. research_data.json 병합 저장
+3. fmea_check_read_status() -> 9종류 Read 완료 확인
+4. 고장영향 목록 확정 + 공통 데이터 사전 생성
+   (standard_expressions, s_value_map, doc_numbers, units)
+```
+
+### Phase 2: FMEA 생성 (고장영향별 Workers 동시!)
+```
+Leader가 고장영향별 Workers 동시 실행:
+
+Worker 1 (fmea-worker-generator): "전류 통전 불가(S=9)" 담당
+Worker 2 (fmea-worker-generator): "절연파괴(S=10)" 담당
+Worker 3 (fmea-worker-generator): "기계적 강도 저하(S=9)" 담당
+Worker 4 (fmea-worker-generator): "손실 증가(S=6)" 담당
+
+각 Worker 내부에서:
+  항목 1개 생성 -> 4-Round 병렬 MCP 사전검증 -> PASS? 다음 항목
+  -> FAIL? 즉시 수정 -> 재검증 (최대 3회, 초과 시 Leader에 에스컬레이션)
+```
+
+### Phase 2 검증: Leader 결과 병합
+```
+Leader:
+1. 모든 Worker 결과 수신
+2. item_no 재부여 (1, 2, 3, ...)
+3. S값/문서번호/기준값 일관성 확인
+4. batch JSON 분리 (10~18행 단위)
+5. fmea_validate_batch() 호출
+6. [BLOCKING] 다이아몬드 구조 (형태당 원인 평균 >= 2.0, 직선비율 < 30%) + 라이프사이클 균형 (각 15%+) 검증
+   -> 1:1:1:1 직선 구조(모든 형태에 원인 1개씩) = BLOCKING FAIL!
+7. [BLOCKING] 기능 커버리지 검증 (v12 신규!)
+   -> research_data.json의 functions[] 전체 기능 목록 추출
+   -> batch JSON의 모든 항목에서 '기능' 값 수집
+   -> 누락 기능 있으면 -> Generator Worker 추가 실행!
+   -> 주기능이 전체의 30% 미만이면 -> WARNING + 추가 생성!
+```
+
+### Phase 3: 최종 검증 + Excel 생성 (ALL-AT-ONCE!)
+```
+Leader:
+1. 6단계 검증 파이프라인 (validate_fmea_json.py 등)
+2. python "C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py" 1차 실행
+   -> 오류 0건: GATE 4로 진행
+   -> 오류 N건: ALL-AT-ONCE 보고 (전체 오류 한 번에 출력!)
+      -> fmea-worker-fixer(Role 0) 호출: 오류 목록 전체 전달!
+      -> [X] 금지: 오류 1개씩 수동 fix 스크립트 작성
+      -> [X] 금지: sed/awk로 JSON 직접 편집
+
+3. (필요시) 추가 fixer 호출:
+   IF 다이아몬드 미달: fmea-worker-fixer(Role A) - 원인 추가
+   IF 라이프사이클 불균형: fmea-worker-fixer(Role B) - 부족 단계 보완
+   IF 용어 불일치: fmea-worker-fixer(Role C) - 표기 통일
+
+4. 보완 병합 -> EXCEL_SCRIPT 재실행 -> PASS (최대 2회)
+5. GATE 4 검증 -> 완료!
+```
+
+---
+
+## [WORKFLOW] Subagent 병렬 실행 순서
+
+```
+시간  Leader                          Workers (Subagent)
+----  -----                           -------
+0분   [L] 부품명 입력 확인
+1분   [L] 작업 폴더 확인/생성
+      ============ Phase 1: 데이터 수집 ============
+1분   [L] 3 Workers 동시 실행 + Leader WebSearch!
+      |  [L] WebSearch 5회 직접 수행     Worker A+D: 다이어그램+온톨로지 (5분)
+      |                                 Worker B: 내부문서-설계/재료 (10분)
+      |                                 Worker C: 내부문서-제작/시험 (8분)
+11분  [L] 모든 Worker 완료
+12분  [L] research_data.json 병합
+      [L] GATE 0 검증 (9종류 Read 확인)
+      [L] 고장영향 목록 + 공통 데이터 사전 생성
+      ============ Phase 2: FMEA 생성 ============
+13분  [L] 고장영향별 Workers 동시 실행!
+      |                                 Gen 1: 영향A (8분, 사전검증 포함!)
+      | (대기)                          Gen 2: 영향B (8분, 사전검증 포함!)
+      |                                 Gen 3: 영향C+D (10분, 사전검증 포함!)
+22분  [L] 모든 Worker 완료
+      [L] normalize_gen_keys.py + postprocess_fmea.py 실행
+      [L] batch JSON 분리 + fmea_validate_batch()
+      [L] 다이아몬드 + 라이프사이클 검증
+      ============ Phase 3: 최종 검증 (ALL-AT-ONCE!) ============
+24분  [L] generate_fmea_excel.py 1차 실행
+      -> 오류 N건 시: ALL-AT-ONCE 보고!
+25분  [L] fmea-worker-fixer(Role 0) 호출
+      |                                 Fixer: ALL-AT-ONCE 오류 일괄 수정
+      |                                 (필요시) 다이아몬드+라이프사이클 보완
+27분  [L] 보완 병합 -> generate_fmea_excel.py 재실행 -> PASS
+28분  [L] GATE 4 검증 -> PASS
+29분  [L] 완료 보고!
+      ================================================
+```
+
+### STEP별 상세 (Subagent 병렬 모드)
+```
+Phase 1 = STEP 0 + STEP 1 + STEP 1.5 통합
+  -> Leader가 3 Workers 동시 실행 + WebSearch 직접 수행으로 병렬화
+  -> GATE 0 = 9종류 Read + WebSearch 5출처 + 온톨로지 6개 로드
+
+Phase 2 = STEP 2 통합
+  -> 고장영향별 Worker가 4-Round 병렬 사전검증 포함하여 생성
+  -> Leader가 결과 병합 + normalize + postprocess + batch JSON + 구조 검증
+
+Phase 3 = STEP 2-1 + STEP 3 통합 (ALL-AT-ONCE!)
+  -> Excel 1차 시도 -> ALL-AT-ONCE 오류 수집 -> fixer Worker 일괄 수정 -> Excel 재시도
+  -> GATE 4 = Excel 최종 검증
+```
+
+### Excel 생성 [BLOCKING!]
+```
+-> [!!] 직접 openpyxl 코드 작성 절대 금지!
+-> [!!] 기존 폴더(철심, 권선_5 등) 커스텀 스크립트 참조 금지!
+-> [!!] 커스텀 Python 스크립트 생성 절대 금지! (create_sample_fmea.py, generate_excel.py 등)
+-> 절대경로: python "C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py" {batch_path}
+-> [X] 금지: Glob으로 스크립트 경로 검색 (절대경로 사용!)
+-> [X] 금지: 찾은 경로 대신 커스텀 대체물 작성!
+-> GATE 4/4-B 자동 검증 -> 완료!
+```
+
+---
+
+## [DIAGRAM] 다이어그램 Excel 구조 (기능분석 시트)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 헤더: 2행, 데이터: 4행부터 시작                                       │
+├──────────────────────────────────────────────────────────────────────┤
+│ 열 구조:                                                              │
+│   A열: 순번                                                           │
+│   B열: L0 (활성부/TANK) - 최상위 분류                                 │
+│   C열: L1 (카테고리) - 중신/권선/단자/외함외장                        │
+│   D열: L2 (도면명)                                                    │
+│   E열: L3 (부품명) <- 검색 대상!                                      │
+│   F열: 기능 <- FMEA B열(기능)에 사용!                                 │
+│   G열: 비고                                                           │
+├──────────────────────────────────────────────────────────────────────┤
+│ 계층 구조: NaN 값은 위 행 값 상속 (ffill)                             │
+│   예: L1="중신"이 한 번 나오면 다음 NaN 행들도 모두 "중신"            │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**부품 검색 방법**:
+1. E열(L3)에서 부품명 검색 (예: "CLAMP", "UPPER_PRESSURE")
+2. 해당 행의 C열(L1) = 카테고리
+3. 해당 행의 D열(L2) = 도면명
+4. 해당 행 + 아래 연속된 행의 F열 = 기능 목록 (부품당 N개 기능)
+
+---
+
+## [INPUT] 입력 정보
+
+**입력 파일 (JSON 변환 완료!)**:
+- 다이어그램: `01.회의/00.회의 자료/02.다이어그램_기능분석/변압기_FMEA_Step2_Step3_다이어그램_v2.9_xlsx.json`
+- 용어사전: `01.회의/00.회의 자료/01.용어정리/변압기_전문용어집_V2.2_xlsx.json`
+- SOD기준표: `01.회의/00.회의 자료/03.SOD_평가기준표/이전자료/초고압변압기_DFMEA_SOD_평가기준표_v5_1_xlsx.json`
+- 내부문서: `02.참고자료/_converted/` (1,502개 파일 - Excel->JSON, PDF->MD, Word->MD)
+- 인덱스: `02.참고자료/_fmea_index/mandatory_docs_by_component.json` (v4.0, 164부품)
+
+**카테고리**: {여기에 카테고리 입력: 중신/권선/단자/외함외장}
+
+**부품명**: {여기에 부품명 입력}
+
+**출력 경로**: `03.FMEA/{기존 카테고리 폴더}/{부품명}/{도면명}_FMEA.xlsx`
+
+**[!] 폴더 구조 (중간 파일 오염 방지!)**:
+```
+03.FMEA/{카테고리}/{부품명}/
++-- _work/                    <- 모든 중간 파일 (worker_*.json, rules_summary.json 등)
++-- {부품명}_FMEA_batch1.json <- 최종 배치 JSON
++-- {부품명}_FMEA_combined.json
++-- {도면명}_FMEA.xlsx        <- 최종 Excel
+```
+- [X] 금지: Worker가 메인 폴더에 중간 파일 직접 생성
+- [X] 금지: Worker B가 SUMMARY.md, INDEX.md 등 부가 파일 생성
+
+**카테고리 폴더 매핑** (기존 폴더 사용!):
+- 중신 -> `01.중신` (이미 존재)
+- 권선 -> `02.권선` (이미 존재)
+- 단자 -> `03.단자` (이미 존재)
+- 외함외장 -> Glob으로 검색 후 사용
+
+---
+
+## [GATE] 체크포인트 (Subagent 기반)
+
+### GATE 0 출력 형식 (Phase 1 완료 후 - Leader가 출력)
+```
+## [GATE 0] Phase 1 데이터 수집 검증
+
+### 인덱스 파일 처리
+- [O] mandatory_docs_by_component.json Read 완료
+- [O] 부품명 "{부품명}" 섹션 찾음
+
+### 설계 단계 Read (4종류 필수!)
+| 종류 | 파일명 | Read | 추출 항목 수 |
+|------|--------|------|-------------|
+| CHECK SHEET | 권선 CHECK SHEET_24_R06.pdf | [O] | 45개 (기준값+허용공차 포함!) |
+| WORKFLOW | Work Flow Sheet_권선.xlsx | [O] | 12개 |
+| TD시리즈 | IJTD_4396.pdf | [O] | 20개 |
+| DRAWING | 권선도면.dwg | [O] | 15개 |
+
+### 재료 단계 Read (1종류 필수!)
+| 종류 | 파일명 | Read | 추출 항목 수 |
+|------|--------|------|-------------|
+| R시리즈 | R시리즈_동선_수입검사.xlsx | [O] | 8개 |
+
+### 제작 단계 Read (3종류 필수!)
+| 종류 | 파일명 | Read | 추출 항목 수 |
+|------|--------|------|-------------|
+| W시리즈 | W시리즈_권선공정.xlsx | [O] | 15개 |
+| I시리즈 | I시리즈_검사기준.xlsx | [O] | 10개 |
+| C시리즈 | C시리즈_체크리스트.xlsx | [O] | 20개 |
+
+### 시험 단계 Read (1종류 필수!)
+| 종류 | 파일명 | Read | 추출 항목 수 |
+|------|--------|------|-------------|
+| P시리즈 | P시리즈_시험기준.xlsx | [O] | 12개 |
+
+### 통과 여부 (9종류 모두 필수!)
+| 라이프사이클 | 필수 | Read 완료 | 상태 |
+|-------------|------|----------|------|
+| 설계 | 4종류 | 4/4 | [O] |
+| 재료 | 1종류 | 1/1 | [O] |
+| 제작 | 3종류 | 3/3 | [O] |
+| 시험 | 1종류 | 1/1 | [O] |
+| **총합** | **9종류** | **9/9** | **GATE 0 통과** |
+
+- [ ] 다이어그램 Read 완료
+- [ ] **9종류 내부문서 모두 Read 완료** (미완료 시 BLOCKING!)
+- [ ] WebSearch 5개 출처 완료
+
+[X] GATE 0 미통과 시: "내부문서 미제출" 금지! -> 경로 자동 재검색 -> 최대 3회 재시도
+[AUTO] GATE 0 통과 -> 기능 목록 자동 확정 -> Phase 2 자동 진행
+```
+
+### 기능 목록 확정 (GATE 0 통과 후, Phase 2 시작 전)
+
+> **[!!] 다이어그램 모든 기능 = MANDATORY! + 내부문서/WebSearch 추가 기능 확장 가능!**
+
+```
+== 기능 목록 확정 ==
+[다이어그램-필수] 주기능: {기능1}       <-- 전체 항목의 >= 30% 할당! 각 2개+!
+[다이어그램-필수] 보조기능: {기능2}     <-- 각 2개+ 항목!
+[다이어그램-필수] 보조기능: {기능3}     <-- 각 2개+ 항목!
+[내부문서-추가]   추가: {기능4} ({출처 문서})   <-- Worker B/C에서 도출, 각 1개+
+[WebSearch-추가]  추가: {기능5} ({출처 표준})   <-- Leader WebSearch에서 도출, 각 1개+
+
+-> 다이어그램 기능(전부 필수!) + 추가 기능 자동 확정 후 Phase 2 진행
+```
+
+**규칙**:
+- **[!!] 다이어그램 기능: 전부 MANDATORY! 주기능+보조기능 모두 빠짐없이 포함! (BLOCKING!)**
+- 추가 기능: Worker B/C(내부문서) + Leader(WebSearch)에서 발굴, **최대 3개**
+- 추가 기능 0개도 가능 (다이어그램만으로 충분한 경우)
+- 자동 확정 -> project_info.additional_functions에 저장 (사용자 확인 불필요)
+- **[!!] 모든 기능 (다이어그램+추가)에 FMEA 항목 완전 생성!**
+- 기능 목록 확정 -> 고장영향 확정(L-1.8) -> function_effect_map 생성 -> Phase 2 Worker 분배
+- 기능분석 시트 비고란: "보조기능 (내부문서)" 또는 "보조기능 (WebSearch)"
+
+### [!!] 기능 커버리지 할당 (BLOCKING! v12.1 강화!)
+
+> **[X] 금지: 다이어그램 기능 중 어느 것이든 FMEA에서 누락!**
+> **[X] 금지: 특정 기능에 항목 1개만 할당 (최소 2개!)**
+> **[X] 금지: 보조기능만으로 전체 FMEA 구성!**
+
+```
+기능 할당 규칙 (v12.1 강화):
+1. 다이어그램 기능 (주기능+보조기능 전부): 각 최소 2개 항목! (BLOCKING!)
+   -> 주기능: 전체 항목의 >= 30% (최소 2개, 권장 4개+)
+   -> 보조기능: 각 최소 2개 항목 (= 최소 1 고장형태 x 2 원인)
+   -> 0개 기능 = BLOCKING FAIL! Generator Worker 추가 실행!
+   -> 1개 기능 = WARNING! 최소 2개로 보강!
+2. 추가 기능 (내부문서/WebSearch 발굴): 각 최소 1개 항목
+3. function_coverage_plan을 research_data.json에 포함!
+4. Generator 프롬프트에 function_coverage_plan 전달!
+5. Phase 2 완료 후 기능별 항목 수 검증! (다이어그램 기능 누락 시 BLOCKING!)
+```
+
+**function_coverage_plan 예시**:
+```json
+{
+  "function_coverage_plan": {
+    "주기능: 지지목을 고정한다": {"type": "주기능", "min_items": 4, "source": "다이어그램"},
+    "보조기능: 접속선의 위치를 유지한다": {"type": "보조기능", "min_items": 2, "source": "다이어그램"},
+    "보조기능: 절연 간격을 확보한다": {"type": "보조기능", "min_items": 2, "source": "다이어그램"},
+    "추가: 진동을 흡수한다": {"type": "추가기능", "min_items": 1, "source": "내부문서"}
+  }
+}
+```
+
+### GATE 1.5 출력 형식 (Phase 1 - Worker A+D 완료 후)
+```
+## [GATE 1.5] 온톨로지/참조파일 로드 검증 (Worker A+D 결과)
+
+### 온톨로지 파일 Read 기록 (Worker A+D가 Phase 1에서 처리)
+| 순서 | 파일명 | Read 도구 | 핵심 내용 |
+|------|--------|----------|----------|
+| 1 | failure-mode-ontology.md | [O] Read | E열 금지어, 태그규칙 |
+| 2 | effect-ontology.md | [O] Read | C열 금지 물리적상태 |
+| 3 | diamond-structure.md | [O] Read | 형태당 원인 2개 이상 |
+| 4 | column-details.md | [O] Read | 컬럼별 형식 규칙 |
+| 5 | prevention-detection-ontology.md | [O] Read | H/J열 출처형식 |
+| 6 | causal-chain-ontology.md | [O] Read | 인과관계 유효조합 |
+
+### rules_summary.json 생성 확인
+- [ ] rules_summary.json Write 완료
+- [ ] 핵심 규칙 추출 완료
+
+[AUTO] GATE 1.5 통과 -> Phase 2 진행 / 미통과 -> [BLOCKING] 중단
+```
+
+### GATE 배치 출력 형식 (Phase 2 - Leader 병합 검증)
+
+> **[!!] 모든 Worker 결과에 MCP fmea_validate_batch() 호출 필수!**
+
+```
+## [GATE] Phase 2 배치 검증 완료
+
+### Worker별 생성 결과 + Leader 병합 검증
+
+| Worker | 고장영향 | 항목수 | 사전검증(4-Round) | fmea_validate_batch | 수정 건수 |
+|--------|---------|--------|-----------------|-------------------|----------|
+| Worker 1 | 영향 A(S=9) | 8개 | [O] 항목별 완료 | [O] Leader 호출 | __건 |
+| Worker 2 | 영향 B(S=10) | 15개 | [O] 항목별 완료 | [O] Leader 호출 | __건 |
+| Worker 3 | 영향 C(S=9) | 6개 | [O] 항목별 완료 | [O] Leader 호출 | __건 |
+
+**[!] "fmea_validate_batch" 열이 모두 [O]여야 GATE 통과!**
+
+### 구조 검증 (Leader가 수행)
+- 기능 커버리지: 다이어그램 __개 기능 전부 포함 (각 2개+), 추가기능 __개 **(v12.1 강화!)**
+- 주기능 비율: __% (>= 30% 필수) **(v12.1)**
+- 다이아몬드: 형태당 원인 평균 __개 (>=2 필수)
+- 라이프사이클: 설계 __%  / 재료 __% / 제작 __% / 시험 __% (각 15%+ 필수)
+
+[AUTO] GATE 완료 -> Phase 3 진행
+```
+
+### 검증 방식 (Claude 자가검증 삭제!)
+- [X] 금지: Claude "100% O" 자가검증 테이블 출력
+- [X] 금지: batch1만 검증하고 batch2, batch3... 스킵
+- [X] 금지: 모든 배치 생성 후 마지막에만 검증
+- [O] 필수: Phase 2 각 Worker 내에서 **4-Round 병렬 사전검증** (항목별 즉시!)
+- [O] 필수: Leader가 병합 후 **fmea_validate_batch()** 호출 (전체 배치!)
+- [O] 필수: 스크립트 결과만 인정 (Self-Validation Gap 원리)
+
+### GATE 3 최종 확인 (Phase 3 - Leader 최종 검증)
+```
+## [GATE 3] Phase 3 완료 + 페르소나 분석
+
+### Phase 2+3 검증 최종 결과
+- 총 배치: __개
+- **Phase 2 사전검증(4-Round)**: [O] 모든 Worker 완료
+- **Phase 2 fmea_validate_batch**: [O] Leader 호출 완료
+- **Phase 3 validate_fmea_json.py**: [O] PASS
+- **Phase 3 Fixer Role 0 (ALL-AT-ONCE)**: [O] 완료 / [-] 불필요
+- **Phase 3 Fixer 추가 보완** (Role A/B/C 필요 시): [O] 완료 / [-] 불필요
+- 총 수정 건수: __건
+- 최종 통과: [O]
+
+### 구조 검증 (Leader)
+- 기능 커버리지: 다이어그램 __/__개 전부 포함(각 2개+), 추가 __개, 주기능 __% (v12.1)
+- 다이아몬드: 형태당 원인 평균 __개 (>=2 [O])
+- 라이프사이클: 설계/재료/제작/시험 각 15%+ [O]
+
+### 페르소나 분석 (4가지 관점)
+1. 신뢰성 엔지니어: S>=8 치명적 고장형태 __개
+2. FMEA 방법론 전문가: 라이프사이클 균형 O/X
+3. 유지보수 전문가: 예방/검출 실무 적용성 O/X
+4. Facilitator: 용어 통일, 문서 정합성 O/X
+
+[AUTO] GATE 3 완료 -> Excel 생성 진행
+```
+
+---
+
+## [OUTPUT] 출력 형식 요구사항
+
+### Phase 2 항목 생성 형식 (모든 컬럼 동시 작성!)
+
+**[BLOCKING]** 각 항목마다 C/E/F/G/H/J열 **모두** 작성!
+
+```
+| No | C열(고장영향) | E열(고장형태) | F열(고장원인) | G열(메커니즘) | H열(예방대책) | J열(검출대책) | S | O | D |
+|----|--------------|--------------|--------------|--------------|--------------|--------------|---|---|---|
+| 1  | 권선 지지력 저하\n(압력 부족) | 부족: 프레셔링 이완\n(...) | 설계: 수축율 미반영\n(...) | 프레스보드 수축 -> 간극 발생 -> 압력 저하 | 설계: 수축율 계산 (설계팀)\n- 수축율: 3-5% 반영 (IJTD_4396)\n재료: 밀도 검사 (QA팀)\n- 밀도: 1.0-1.2g/cm3 (R시리즈) | 설계: 도면 검토 (설계팀)\n- 수축율 계산서 확인\n재료: 입고검사 (QA팀)\n- 밀도 측정 합격 | 7 | 4 | 4 |
+```
+
+**[X] 금지**: C/E/F열만 작성하고 G/H/J열은 "나중에 채움" 또는 "Phase 3에서 작성"
+
+---
+
+### G열 (고장메커니즘)
+```
+형식: 원인 -> 과정 -> 결과 (화살표 2개 이상 필수!)
+예시: 체결 부족 -> 진동에 의한 피로 진행 -> 볼트 이완
+```
+
+### H열/J열 (예방/검출대책)
+
+> **[BLOCKING]** `설계:` `재료:` `제작:` `시험:` 콜론 형식 필수!
+> [X] 금지: `[설계]` `[재료]` `[제작]` `[시험]` 대괄호 형식!
+> [O] 필수: 최소 2개 이상 라이프사이클 단계 포함! (1개만 = MCP FAIL!)
+
+```
+형식: 4줄 이상 + 기준값 + 출처 필수!
+예시:
+설계: 클램프 압력 계산 (설계팀)
+- 바인딩 압력: 0.5-0.8 MPa (IJTD_4396)
+재료: 수입검사 (QA팀)
+- SS400 재질증명서 확인 (R시리즈)
+제작: 토크 관리 (생산팀)
+- M12 볼트: 85 +/-5 Nm (W시리즈 3.2)
+시험: 절연저항 시험 (QA팀)
+- 합격기준: 1000 MOhm 이상 (P시리즈)
+```
+
+---
+
+## [BLOCKING] 절대 금지사항
+
+| 금지 행동 | 이유 | 대안 |
+|----------|------|------|
+| **인덱스 파일만 읽고 끝내기** | 내부문서 미참조! | 인덱스 -> 경로추출 -> Glob -> **실제 파일 Read** |
+| **Glob으로 찾고 멈추기** | 가장 흔한 실수! | Glob 후 **반드시 Read 도구 호출** |
+| **Read만 하고 등록 안함** | **환각 방지 실패!** | **Read 직후 fmea_register_read() 호출!** |
+| **MCP 검증 없이 항목 작성** | **품질 보증 실패!** | **각 컬럼 MCP 도구로 검증!** |
+| GATE 없이 진행 | 품질 검증 누락! | 자동 검증 (미통과 시 자동 재시도, 3회 실패 시에만 중단) |
+| openpyxl 직접 사용 | 검증 우회! | generate_fmea_excel.py |
+| H/J열 1줄만 작성 | 기준값 누락! | 4줄 이상 + 기준값 |
+| H/J열 `[설계]` 대괄호 형식 | MCP FAIL! | `설계:` 콜론 형식 필수! |
+| E열 추상적 표현 (불량/체결력/기밀성/성능 등) | MCP v2.5 FAIL! | 눈에 보이는 구체적 현상으로! |
+| C/F열 1줄만 작성 | MCP v2.2 FAIL! | C열 2줄, F열 2줄 (상세설명 포함!) |
+| 출처 없이 작성 | Fabrication! | fmea_register_read로 출처 등록! |
+| **"JSON 생성 시 적용" 표현** | **GATE 검증 우회!** | **H/J열 즉시 완전 작성** |
+| **H/J열 나중에 채움** | **논리적 오류!** | **Phase 2에서 완전한 형식으로 작성** |
+| **직접 openpyxl 스크립트 작성** | **기능분석 시트/메모 누락!** | **EXCEL_SCRIPT 절대경로만 사용!** |
+| **기존 폴더 커스텀 스크립트 참조** | **양식 불일치!** | **절대경로로 직접 실행!** |
+| **ToolSearch 없이 MCP 도구 호출** | **deferred tools 미로드!** | **ToolSearch("fmea") 먼저 호출!** |
+| **Glob으로 스크립트 경로 검색** | **커스텀 대체물 작성 위험!** | **절대경로 직접 사용!** |
+| **부분 완료를 전체 PASS 보고** | **거짓 완료!** | **부품 수 확인 + batch JSON 존재 확인!** |
+| **커스텀 Python 스크립트 생성** | **컬럼 매핑 완전 불일치!** | **EXCEL_SCRIPT 절대경로만 사용!** |
+| **다이어그램 기능 누락 (일부만 사용)** | **기능 커버리지 위반! (v12.1)** | **다이어그램 모든 기능 각 2개+ 항목! + 추가기능 확장!** |
+| **F열 수정 후 G열 검증 생략** | **인과관계 불일치!** | **fmea_validate_cause_mechanism() 재검증!** |
+
+---
+
+## [EXAMPLE] 사용 예시
+
+### 예시 1: 단일 부품
+```
+단자 카테고리에서 "압착단자" FMEA 작성해줘
+
+[필수] /fmea-analysis 스킬 활성화
+[필수] 각 GATE 자동 검증 + 자동 진행 (처음~끝 무중단)
+[필수] 내부문서 실제 Read 후 Read 기록 테이블 출력
+```
+
+### 예시 2: 카테고리 전체
+```
+중신 카테고리 전체 FMEA 작성해줘
+
+[필수] 부품별로 하나씩 완료 후 다음 진행
+[필수] 각 부품마다 GATE 0~4 모두 통과
+```
+
+---
+
+## [AUTO-VERIFY] 자동 검증 모드 (Subagent)
+
+Leader가 아래 상황에서 **자동 검증 후 통과 시 자동 진행**:
+
+1. **GATE 0** (Phase 1 완료): 3 Workers 결과 검증 -> 통과 시 GATE 1.5 진행 / 미통과 시 [BLOCKING] 중단
+2. **GATE 1.5** (Phase 1 - Worker A+D): 온톨로지 로드 확인 -> 통과 시 Phase 2 진행 / 미통과 시 [BLOCKING] 중단
+3. **GATE 배치** (Phase 2 완료): Worker별 사전검증 + Leader 병합 검증 -> 통과 시 Phase 3 / 미통과 시 수정 후 재검증
+   - 각 Worker 내에서 4-Round 병렬 사전검증 (항목별 즉시!)
+   - Leader가 병합 후 fmea_validate_batch() + 다이아몬드/라이프사이클 검증
+4. **GATE 3** (Phase 3 완료): Excel 1차 시도 -> ALL-AT-ONCE 오류 수집 -> Fixer Role 0 일괄 수정 -> Excel 재시도 -> PASS 시 GATE 4
+5. **GATE 4**: Excel 생성 검증 -> 통과 시 완료 / 미통과 시 수정
+
+**[!] 완전 자동 실행**: 모든 GATE 자동 검증 + 자동 재시도. 3회 실패 시에만 사용자에게 보고 후 중단.
+
+---
+
+## [TOKEN] 토큰 사용량 보고
+
+각 Phase 완료 시 아래 형식으로 토큰 사용량 보고:
+```
+[토큰 사용량]
+- Phase 1 (데이터 수집): __K tokens (Worker A+D/B/C + Leader WebSearch 합계)
+- Phase 2 (FMEA 생성): __K tokens (Worker 1~N 합계)
+- Phase 3 (검증+Excel): __K tokens (Leader + Fixer 합계)
+- 총합: __K tokens
+- 총 소요시간: __분
+```

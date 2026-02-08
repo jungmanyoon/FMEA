@@ -1,0 +1,46 @@
+# ==========================================
+# FMEA Project - Git Ignore
+# ==========================================
+
+# --- Project Data (CONFIDENTIAL) ---
+01.*/
+02.*/
+03.FMEA/
+04.HMS_DB/
+05.*/
+06.*/
+00.*/
+
+# --- Local Utilities ---
+DRM_*.py
+
+# --- Local Settings ---
+.claude/settings.local.json
+.claude/plans/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Backup ---
+*.zip
+*.bak
+*.backup

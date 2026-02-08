@@ -1,0 +1,11 @@
+# Force LF for agent files (CRLF breaks YAML parsing in Claude Code)
+.claude/agents/*.md text eol=lf
+.claude/skills/**/*.md text eol=lf
+
+# Python scripts - LF
+*.py text eol=lf
+
+# General text
+*.txt text
+*.json text
+*.md text
