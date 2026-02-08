@@ -50,7 +50,7 @@ Read: 02.참고자료/_fmea_index/mandatory_docs_by_component.json (v4.0)
 [X] 금지: 인덱스 메타데이터만 보고 FMEA 유추 작성
 [X] 금지: 모든 파일 Read 후 나중에 H/J열 한꺼번에 작성
 [OK] 필수: 파일 Read -> 즉시 해당 라이프사이클 H/J열 작성 -> 다음 파일
-[!] 경로: C:\Users\jmyoo\Desktop\FMEA\02.참고자료\{file경로}
+[!] 경로: 02.참고자료/{file경로}
 ```
 
 ### [SEARCH] 내부 문서 검색 (2단계 Progressive Disclosure)
@@ -67,7 +67,7 @@ Read: 02.참고자료/_fmea_index/mandatory_docs_by_component.json
 
 **2. 인덱스에서 찾은 변환 파일 Read**:
 ```
-Read: C:\Users\jmyoo\Desktop\FMEA\02.참고자료\{file경로}
+Read: 02.참고자료/{file경로}
 -> file 경로는 _converted/ 하위 텍스트 파일 (MD 또는 JSON)
 -> 바이너리 원본이 아닌 변환된 텍스트 파일 Read!
 ```

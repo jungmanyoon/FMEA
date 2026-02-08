@@ -5,18 +5,18 @@ description: 변압기 FMEA 전문가. AIAG-VDA 2019 통합 방식, MCP 도구 �
 
 ## 스킬 경로 상수 (BLOCKING!)
 
-| 경로 | 절대경로 |
+| 경로 | 프로젝트 루트 기준 |
 |------|----------|
-| SKILL_DIR | `C:\Users\jmyoo\.claude\skills\fmea-analysis` |
-| SCRIPT_DIR | `C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts` |
-| REFERENCES_DIR | `C:\Users\jmyoo\.claude\skills\fmea-analysis\references` |
-| EXCEL_SCRIPT | `C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py` |
-| AGENTS_DIR | `c:\Users\jmyoo\Desktop\FMEA\.claude\agents` |
-| LEADER_PLAYBOOK | `c:\Users\jmyoo\Desktop\FMEA\.claude\agents\fmea-leader.md` |
+| SKILL_DIR | `.claude/skills/fmea-analysis` |
+| SCRIPT_DIR | `.claude/skills/fmea-analysis/scripts` |
+| REFERENCES_DIR | `.claude/skills/fmea-analysis/references` |
+| EXCEL_SCRIPT | `.claude/skills/fmea-analysis/scripts/generate_fmea_excel.py` |
+| AGENTS_DIR | `.claude/agents` |
+| LEADER_PLAYBOOK | `.claude/agents/fmea-leader.md` |
 
-> [X] 금지: `scripts/generate_fmea_excel.py` 상대경로 사용
+> [X] 금지: `scripts/generate_fmea_excel.py` 짧은 상대경로 사용
 > [X] 금지: `find`/`Glob`으로 스크립트 검색 후 커스텀 대체물 작성
-> [O] 필수: 위 EXCEL_SCRIPT 절대경로로 직접 실행!
+> [O] 필수: 위 EXCEL_SCRIPT 경로로 직접 실행!
 
 ---
 

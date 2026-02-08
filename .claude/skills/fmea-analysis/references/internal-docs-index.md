@@ -51,7 +51,7 @@
 
 **변환 파일 형식**: `_converted/97.도시바TD/TD{번호}/IJTD_{번호}_REV{버전}_pdf.md`
 - 예: `_converted/97.도시바TD/TD4/IJTD_4143_REV0.0_pdf.md`
-- **경로**: `C:\Users\jmyoo\Desktop\FMEA\02.참고자료\_converted\97.도시바TD\`
+- **경로**: `02.참고자료/_converted/97.도시바TD/`
 
 #### [!!] 부품별 IJTD 필수 파일 매핑 (FMEA 작성 시 Read 필수!)
 

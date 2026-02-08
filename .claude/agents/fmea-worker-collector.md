@@ -51,13 +51,13 @@ prompt에 "Worker A" 또는 "Worker A+D" 또는 "다이어그램" 포함 시
 
 === Part 2: 온톨로지 로드 ===
 
-[WD-1] 6개 온톨로지 파일 순서대로 Read (절대경로!)
-  1. C:\Users\jmyoo\.claude\skills\fmea-analysis\references\failure-mode-ontology.md
-  2. C:\Users\jmyoo\.claude\skills\fmea-analysis\references\effect-ontology.md
-  3. C:\Users\jmyoo\.claude\skills\fmea-analysis\references\diamond-structure.md
-  4. C:\Users\jmyoo\.claude\skills\fmea-analysis\references\column-details.md
-  5. C:\Users\jmyoo\.claude\skills\fmea-analysis\references\prevention-detection-ontology.md
-  6. C:\Users\jmyoo\.claude\skills\fmea-analysis\references\causal-chain-ontology.md
+[WD-1] 6개 온톨로지 파일 순서대로 Read (프로젝트 루트 기준!)
+  1. .claude/skills/fmea-analysis/references/failure-mode-ontology.md
+  2. .claude/skills/fmea-analysis/references/effect-ontology.md
+  3. .claude/skills/fmea-analysis/references/diamond-structure.md
+  4. .claude/skills/fmea-analysis/references/column-details.md
+  5. .claude/skills/fmea-analysis/references/prevention-detection-ontology.md
+  6. .claude/skills/fmea-analysis/references/causal-chain-ontology.md
 
 [WD-2] 핵심 규칙 추출 + _work/rules_summary.json 저장
 ```

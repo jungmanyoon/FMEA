@@ -18,9 +18,9 @@
 6. **[NEW] ToolSearch 필수** - MCP 도구는 deferred tools! 사용 전 반드시 로드!
    - `ToolSearch("fmea")` -> 16개 도구 로드 후 사용
    - [X] 금지: ToolSearch 없이 MCP 도구 호출 시도 (실패함!)
-7. **[NEW] 스킬 절대경로 필수** - 상대경로 사용 금지!
-   - EXCEL_SCRIPT: `C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py`
-   - REFERENCES: `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\`
+7. **[NEW] 스킬 경로 필수** - 프로젝트 루트 기준 경로 사용!
+   - EXCEL_SCRIPT: `.claude/skills/fmea-analysis/scripts/generate_fmea_excel.py`
+   - REFERENCES: `.claude/skills/fmea-analysis/references/`
    - [X] 금지: Glob으로 스크립트 검색 후 커스텀 대체물 작성!
 8. **[NEW] 완료 전 BLOCKING 체크** - 거짓 완료 방지!
    - 전체 부품 수 == 처리된 부품 수 확인 후에만 PASS 보고
@@ -199,7 +199,7 @@
 
 > **[BLOCKING]** Subagent 패턴으로 실행!
 > Leader(메인 세션)가 전체 조율, Workers(Subagent)가 병렬 실행!
-> 에이전트 파일: `C:\Users\jmyoo\Desktop\FMEA\.claude\agents\` (4개: leader + collector + generator + fixer)
+> 에이전트 파일: `.claude/agents/` (4개: leader + collector + generator + fixer)
 
 ### 에이전트 구성
 | 에이전트 | 역할 | 모델 | Phase |
@@ -221,7 +221,7 @@ Worker A+D (다이어그램+온톨로지 병합):
     -> E열(부품명) 검색 -> D열(도면명), F열(기능) 추출
     -> 주기능/보조기능 구분
   Part 2: 6개 온톨로지 Read -> rules_summary.json 저장
-    -> 절대경로: C:\Users\jmyoo\.claude\skills\fmea-analysis\references\
+    -> 경로: .claude/skills/fmea-analysis/references/
     -> [X] 금지: 프로젝트 폴더(02.참고자료/)에서 온톨로지 검색!
 
 Worker B (내부문서-설계+재료): mandatory_docs_by_component.json에서 경로 추출
@@ -286,7 +286,7 @@ Leader:
 ```
 Leader:
 1. 6단계 검증 파이프라인 (validate_fmea_json.py 등)
-2. python "C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py" 1차 실행
+2. python ".claude/skills/fmea-analysis/scripts/generate_fmea_excel.py" 1차 실행
    -> 오류 0건: GATE 4로 진행
    -> 오류 N건: ALL-AT-ONCE 보고 (전체 오류 한 번에 출력!)
       -> fmea-worker-fixer(Role 0) 호출: 오류 목록 전체 전달!
@@ -361,8 +361,8 @@ Phase 3 = STEP 2-1 + STEP 3 통합 (ALL-AT-ONCE!)
 -> [!!] 직접 openpyxl 코드 작성 절대 금지!
 -> [!!] 기존 폴더(철심, 권선_5 등) 커스텀 스크립트 참조 금지!
 -> [!!] 커스텀 Python 스크립트 생성 절대 금지! (create_sample_fmea.py, generate_excel.py 등)
--> 절대경로: python "C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py" {batch_path}
--> [X] 금지: Glob으로 스크립트 경로 검색 (절대경로 사용!)
+-> 경로: python ".claude/skills/fmea-analysis/scripts/generate_fmea_excel.py" {batch_path}
+-> [X] 금지: Glob으로 스크립트 경로 검색!
 -> [X] 금지: 찾은 경로 대신 커스텀 대체물 작성!
 -> GATE 4/4-B 자동 검증 -> 완료!
 ```

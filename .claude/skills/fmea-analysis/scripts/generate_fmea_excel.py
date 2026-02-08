@@ -2390,7 +2390,7 @@ if __name__ == "__main__":
     import argparse
 
     # 기본 QA DB 경로 (일진전기 변압기 FMEA 전용)
-    DEFAULT_QA_DB = r"C:\Users\jmyoo\Desktop\FMEA\04.HMS_DB\QA자료\01_원본데이터\QA_품질이력.db"
+    DEFAULT_QA_DB = r"04.HMS_DB/QA자료/01_원본데이터/QA_품질이력.db"
 
     parser = argparse.ArgumentParser(
         description='FMEA Excel 자동 생성 스크립트 (일진전기 변압기 FMEA 전용)',

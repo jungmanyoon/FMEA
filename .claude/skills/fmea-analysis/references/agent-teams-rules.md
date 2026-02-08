@@ -129,8 +129,8 @@ Task(subagent_type="fmea-worker-fixer",
 [O] 필수: 스킬 스크립트만 사용!
 ```
 
-**EXCEL_SCRIPT 절대경로**:
-`C:\Users\jmyoo\.claude\skills\fmea-analysis\scripts\generate_fmea_excel.py`
+**EXCEL_SCRIPT 경로 (프로젝트 루트 기준)**:
+`.claude/skills/fmea-analysis/scripts/generate_fmea_excel.py`
 
 **근거**: 커스텀 스크립트는 컬럼 매핑(A~V), 셀 병합(A-E), 정렬 규칙을 모두 무시함
 -> 내용정리.txt #2: B열=잠재원인(오류), C열=원인/메커니즘(오류) 등 컬럼 완전 불일치
@@ -171,24 +171,24 @@ Leader는 완료 보고 전 반드시 확인:
 
 ---
 
-## 10. 온톨로지/스크립트 절대경로 (BLOCKING)
+## 10. 온톨로지/스크립트 경로 (BLOCKING)
 
-스킬 파일은 **프로젝트 폴더가 아닌 사용자 설정 폴더**에 위치!
+스킬 파일은 프로젝트 `.claude/skills/fmea-analysis/`에 위치!
 
 ```
-스킬 기본 경로: C:\Users\jmyoo\.claude\skills\fmea-analysis\
+스킬 기본 경로: .claude/skills/fmea-analysis/
 
 [X] 금지: 02.참고자료/ 하위에서 온톨로지 검색
 [X] 금지: 프로젝트 폴더에서 find/Glob으로 스크립트 검색
-[O] 필수: 절대경로로 직접 접근!
+[O] 필수: 아래 경로로 직접 접근!
 ```
 
-**온톨로지 6개 파일 절대경로**:
-1. `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\failure-mode-ontology.md`
-2. `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\effect-ontology.md`
-3. `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\diamond-structure.md`
-4. `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\column-details.md`
-5. `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\prevention-detection-ontology.md`
-6. `C:\Users\jmyoo\.claude\skills\fmea-analysis\references\causal-chain-ontology.md`
+**온톨로지 6개 파일 경로 (프로젝트 루트 기준)**:
+1. `.claude/skills/fmea-analysis/references/failure-mode-ontology.md`
+2. `.claude/skills/fmea-analysis/references/effect-ontology.md`
+3. `.claude/skills/fmea-analysis/references/diamond-structure.md`
+4. `.claude/skills/fmea-analysis/references/column-details.md`
+5. `.claude/skills/fmea-analysis/references/prevention-detection-ontology.md`
+6. `.claude/skills/fmea-analysis/references/causal-chain-ontology.md`
 
 **근거**: 내용정리.txt #2에서 Worker D가 `02.참고자료/01.Claude/스킬/` 경로 검색 -> FileNotFoundError

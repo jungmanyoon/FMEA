@@ -237,7 +237,7 @@ def analyze_keyword_coverage(data):
                 print(f"      [WARN] 기능 키워드 없음")
 
 def main():
-    filepath = 'c:/Users/jmyoo/.claude/skills/fmea-analysis/철심_FMEA.xlsx'
+    filepath = './sample_FMEA.xlsx'  # 분석할 FMEA 파일 경로
 
     print("="*100)
     print("철심_FMEA.xlsx 인과관계 근본 원인 분석")

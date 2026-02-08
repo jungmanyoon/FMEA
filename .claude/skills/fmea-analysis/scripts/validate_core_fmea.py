@@ -421,7 +421,7 @@ def generate_summary(data, all_issues):
     print("\n" + "="*80)
 
 def main():
-    filepath = 'c:/Users/jmyoo/.claude/skills/fmea-analysis/철심_FMEA.xlsx'
+    filepath = './sample_FMEA.xlsx'  # 검증할 FMEA 파일 경로
 
     print("="*80)
     print("철심_FMEA.xlsx 전체 검증")

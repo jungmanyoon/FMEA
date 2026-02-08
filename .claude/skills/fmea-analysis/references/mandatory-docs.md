@@ -114,9 +114,9 @@ categories
 | .pdf | .md | `_converted/97.도시바TD/TD4/IJTD_4143_REV0.0_pdf.md` |
 | .docx | .md | `_converted/생산_작업요령/IEQT-T-W018_..._docx.md` |
 
-**[!] 중요**: 파일 경로는 `02.참고자료/` 기준 상대경로. Read 시 절대경로로 변환:
+**[!] 중요**: 파일 경로는 `02.참고자료/` 기준 상대경로. Read 시 프로젝트 루트 기준:
 ```
-C:\Users\jmyoo\Desktop\FMEA\02.참고자료\{file경로}
+02.참고자료/{file경로}
 ```
 
 ---
