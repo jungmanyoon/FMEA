@@ -7,13 +7,7 @@
 
 ## 1. 플러그인 설치 (최초 1회)
 
-### 1.1 GitHub 초대 수락
-
-이 프로젝트는 비공개(Private)입니다. 팀장이 보낸 초대 이메일에서:
-1. "Accept invitation" 클릭
-2. GitHub 계정이 없으면 먼저 가입: https://github.com/signup
-
-### 1.2 FMEA 폴더에서 CMD 열기
+### 1.1 FMEA 폴더에서 CMD 열기
 
 본인의 FMEA 폴더를 Windows 탐색기에서 엽니다.
 
@@ -24,7 +18,10 @@
 
 이렇게 하면 FMEA 폴더 위치에서 CMD가 바로 열립니다.
 
-### 1.3 플러그인 코드 다운로드
+### 1.2 플러그인 코드 다운로드
+
+Git이 설치되어 있어야 합니다. `git --version`으로 확인하세요.
+없으면 https://git-scm.com/download/win 에서 설치 후 CMD를 새로 여세요.
 
 CMD에서 아래 명령어를 **한 줄씩** 입력하고 Enter를 누르세요:
 
@@ -44,9 +41,7 @@ git fetch origin main
 git checkout origin/main -- .claude .gitattributes
 ```
 
-> 처음 실행 시 GitHub 로그인 창이 뜰 수 있습니다. 로그인하면 됩니다.
-
-### 1.4 프롬프트 파일 다운로드
+### 1.3 프롬프트 파일 다운로드
 
 ```
 git checkout origin/main -- 프롬프트.txt
@@ -54,7 +49,7 @@ git checkout origin/main -- 프롬프트.txt
 
 > 이미 프롬프트.txt가 있는 경우 덮어쓰기됩니다.
 
-### 1.5 Python 패키지 설치
+### 1.4 Python 패키지 설치
 
 ```
 pip install -r .claude/skills/fmea-analysis/mcp-server/requirements.txt
@@ -167,10 +162,6 @@ pip install -r .claude/skills/fmea-analysis/mcp-server/requirements.txt
 -> https://git-scm.com/download/win 에서 Git을 설치하세요.
    설치 후 CMD를 새로 열어야 합니다.
 
-### GitHub 로그인이 안 됨
--> 팀장에게 GitHub 초대를 요청하세요.
-   초대 이메일에서 "Accept invitation"을 클릭해야 합니다.
-
 ### "pip" 명령어를 찾을 수 없음
 -> https://www.python.org/downloads/ 에서 Python을 설치하세요.
    설치 시 "Add Python to PATH" 반드시 체크!
@@ -191,21 +182,20 @@ pip install -r .claude/skills/fmea-analysis/mcp-server/requirements.txt
 
 ```
 [플러그인 설치 - 최초 1회]
-  1. GitHub 초대 수락 (이메일 확인)
-  2. FMEA 폴더 열기 -> 주소창에 cmd 입력 -> Enter
-  3. git init
-  4. git remote add origin https://github.com/jungmanyoon/FMEA.git
-  5. git fetch origin main
-  6. git checkout origin/main -- .claude .gitattributes
-  7. git checkout origin/main -- 프롬프트.txt
-  8. pip install -r .claude/skills/fmea-analysis/mcp-server/requirements.txt
+  1. FMEA 폴더 열기 -> 주소창에 cmd 입력 -> Enter
+  2. git init
+  3. git remote add origin https://github.com/jungmanyoon/FMEA.git
+  4. git fetch origin main
+  5. git checkout origin/main -- .claude .gitattributes
+  6. git checkout origin/main -- 프롬프트.txt
+  7. pip install -r .claude/skills/fmea-analysis/mcp-server/requirements.txt
 
 [FMEA 작성 - 매번]
-  9. FMEA 폴더에서 CMD 열기
-  10. claude 입력
-  11. 프롬프트.txt 첫 줄 수정 -> 전체 복사 -> 붙여넣기
-  12. 자동 실행 대기 (30분~1시간)
-  13. 03.FMEA 폴더에서 Excel 결과 확인
+  8. FMEA 폴더에서 CMD 열기
+  9. claude 입력
+  10. 프롬프트.txt 첫 줄 수정 -> 전체 복사 -> 붙여넣기
+  11. 자동 실행 대기 (30분~1시간)
+  12. 03.FMEA 폴더에서 Excel 결과 확인
 ```
 
 ---
