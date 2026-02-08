@@ -3,48 +3,31 @@
 AIAG-VDA 2019 FMEA Handbook 기반 변압기 FMEA 자동 생성 시스템.
 Claude Code + MCP Server + Subagent Architecture.
 
-## Quick Start
+## 설치 방법
 
-### 1. Clone
+> 상세 가이드: [SETUP_GUIDE.md](SETUP_GUIDE.md)
 
-```bash
-git clone https://github.com/jungmanyoon/FMEA.git
-cd FMEA
+### 1. ZIP 다운로드
+
+초록색 **Code** 버튼 -> **Download ZIP**
+
+### 2. 파일 복사
+
+ZIP에서 **.claude** 폴더와 **프롬프트.txt**를 본인의 FMEA 폴더에 복사
+
+### 3. 설치 실행
+
+FMEA 폴더의 **install.bat** 더블클릭 (Python 패키지 자동 설치)
+
+### 4. FMEA 작성
+
+FMEA 폴더에서 CMD를 열고:
+
 ```
-
-### 2. Python Dependencies
-
-```bash
-pip install -r .claude/skills/fmea-analysis/mcp-server/requirements.txt
-```
-
-### 3. Directory Structure
-
-Clone 후 아래 폴더를 직접 생성하고 데이터를 넣어야 합니다:
-
-```
-FMEA/
-+-- 01.회의/                     # 회의 자료 (다이어그램 JSON 등)
-+-- 02.참고자료/                  # 내부 기술문서
-|   +-- _converted/              # 변환된 텍스트 파일 (convert 스크립트 실행)
-|   +-- _fmea_index/             # 문서 인덱스 (rebuild_index 스크립트 실행)
-+-- 03.FMEA/                     # FMEA 출력물 (자동 생성됨)
-```
-
-### 4. Claude Code 실행
-
-```bash
 claude
 ```
 
-Claude Code가 자동으로 인식하는 것들:
-- `.claude/agents/` - FMEA 에이전트 4개 (Leader, Collector, Generator, Fixer)
-- `.claude/skills/fmea-analysis/` - FMEA 스킬 + MCP 서버
-- `.claude/settings.json` - 권한 및 Hook 설정
-
-### 5. FMEA 작성
-
-`프롬프트.txt`의 내용을 Claude Code에 붙여넣으면 FMEA 작성이 시작됩니다.
+`프롬프트.txt` 첫 줄을 수정하고 전체 내용을 Claude Code에 붙여넣으면 FMEA 작성이 시작됩니다.
 
 ## Architecture
 
