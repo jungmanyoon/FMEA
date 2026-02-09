@@ -197,11 +197,11 @@ Task(subagent_type="fmea-worker-generator",
 - 파일 확인: _work/gen*_{effect}.json
 - [!!] 키 정규화 스크립트 실행 (영어 키 -> 한글 키 자동 변환!)
 ```bash
-python "$USERPROFILE/.claude/skills/fmea-analysis/scripts/normalize_gen_keys.py" {work_path} --output {combined_path} --category {카테고리} --drawing {도면명}
+python ".claude/skills/fmea-analysis/scripts/normalize_gen_keys.py" {work_path} --output {combined_path} --category {카테고리} --drawing {도면명}
 ```
 - 정규화 후 postprocessor 실행:
 ```bash
-python "$USERPROFILE/.claude/skills/fmea-analysis/scripts/postprocess_fmea.py" {combined_path}
+python ".claude/skills/fmea-analysis/scripts/postprocess_fmea.py" {combined_path}
 ```
 > [!!] normalize_gen_keys.py가 project_info 키도 자동 생성! 수동 추가 불필요!
 > [!!] Generator가 영어 키(part, B, C, E, F, G, H, J)를 출력해도 자동 변환됨!
@@ -246,7 +246,7 @@ Glob("03.FMEA/{카테고리}/{도면명}*/*_FMEA_batch*.json")
 
 ### L-3.1 Excel 1차 시도
 ```bash
-python "$USERPROFILE/.claude/skills/fmea-analysis/scripts/generate_fmea_excel.py" {batch_path}
+python ".claude/skills/fmea-analysis/scripts/generate_fmea_excel.py" {batch_path}
 ```
 
 ### L-3.2 오류 시 Fixer 생성

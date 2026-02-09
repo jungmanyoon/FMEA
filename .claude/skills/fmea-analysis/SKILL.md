@@ -48,15 +48,15 @@ description: 변압기 FMEA 전문가. AIAG-VDA 2019 통합 방식, MCP 도구 �
 > [!!] 스킬 활성화 시 fmea-leader.md를 Read하고 playbook으로 따름!
 
 ```
-1. Read(LEADER_PLAYBOOK)                     <- 절대경로 필수!
-   c:\Users\jmyoo\Desktop\FMEA\.claude\agents\fmea-leader.md
+1. Read(LEADER_PLAYBOOK)                     <- 프로젝트 루트 기준!
+   .claude/agents/fmea-leader.md
 2. fmea-leader.md의 Phase 0~3 지시를 따름   <- playbook!
 3. Task(subagent_type=..., mode="dontAsk") 패턴 사용
 ```
 
 > [!!] fmea-leader.md는 spawn 대상이 아님! 메인 세션이 Read하고 playbook으로 따름!
 
-### Agent 파일 (AGENTS_DIR: `c:\Users\jmyoo\Desktop\FMEA\.claude\agents\`)
+### Agent 파일 (AGENTS_DIR: `.claude/agents/`)
 
 | Agent | 역할 | model | 사용 방법 |
 |-------|------|-------|-----------|
@@ -219,7 +219,7 @@ Round 4: S/O/D + RPN + AP 산출 (MCP 불요)
 ## STEP 3: Excel 생성
 
 ```bash
-python "$USERPROFILE/.claude/skills/fmea-analysis/scripts/generate_fmea_excel.py" {batch_path}
+python ".claude/skills/fmea-analysis/scripts/generate_fmea_excel.py" {batch_path}
 ```
 
 > [X] 금지: 커스텀 Python 스크립트 작성 (openpyxl/pandas 직접 사용)
